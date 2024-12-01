@@ -20,7 +20,7 @@ class CollocationManager:
         with open(file_path, 'r', encoding='utf-8') as file:
             for line in file:
                 words = [self.clean_word(word) for word in line.strip().split() if self.clean_word(word)]
-                self.collocations[words[0]].append(words[1:])
+                self.collocations[words[0]].append(" ".join(words[1:]))
         self.save_collocations()
     
     def save_collocations(self):
@@ -61,8 +61,7 @@ class CollocationManager:
     def __len__(self):
         return len(self.collocations)
     
-    def all_words(self):
-        return list(self.collocations.keys())
+
 
 def main():
     manager = CollocationManager('Collocs.txt')
