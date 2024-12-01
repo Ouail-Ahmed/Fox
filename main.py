@@ -42,6 +42,8 @@ def get_lemmas(pos_tokens: list[tuple[str, str]]) -> list[str]:
             lemms.append(lemmatizer.lemmatize(token, pos="v"))
         elif pos == "ADJ":
             lemms.append(lemmatizer.lemmatize(token, pos="a"))
+        elif pos == "NUM":
+            lemms.append(lemmatizer.lemmatize(token, pos="n"))
     return lemms
 
 path = folder
