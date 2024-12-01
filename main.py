@@ -8,7 +8,7 @@ import inverse_index_access
 import json
 import re
 import math
-path = Path("C:/Users/ahmed/Documents/Programming/Python/Fox/time_test")
+folder = Path("C:/Users/ahmed/Documents/Programming/Python/Fox/time_test")
 lemmatizer = WordNetLemmatizer()
 
 def custom_tokenizer(text):
@@ -16,7 +16,7 @@ def custom_tokenizer(text):
     for i, phrase in enumerate(quoted_phrases):
         placeholder = f"__QUOTE{i}__"
         text = text.replace(f'"{phrase}"', placeholder)
-    
+    # text = text.replace("'s", "s").replace("n't", "not").replace("'re", "are").replace("'ve", "have").replace("'ll", "will").replace("'d", "would").replace("'m", "am").replace("'em", "them").replace("'all", "all").replace("."," ").replace(","," ").replace("("," ").replace(")"," ").replace("["," ").replace("]"," ").replace("{"," ").replace("}"," ").replace(":"," ").replace(";"," ").replace("!"," ").replace("?"," ").replace("-"," ").replace("  "," ")
     tokens = word_tokenize(text)
     
     for i, phrase in enumerate(quoted_phrases):
@@ -44,12 +44,14 @@ def get_lemmas(pos_tokens: list[tuple[str, str]]) -> list[str]:
             lemms.append(lemmatizer.lemmatize(token, pos="a"))
     return lemms
 
-folder = path
+path = folder
 files_paths = get_files(folder)
 
-def save_to_json(path, f, lemms , file_name):
-    filename = path / f"{f.stem}_{file_name}.json"
-    index = {f.stem: lemms , "path":str(f) }
+def save_to_json(path, f, lemms, file_name):
+    output_folder =Path( path / "output")
+    output_folder.mkdir(exist_ok=True)
+    filename = output_folder / f"{f.stem}_{file_name}.json"
+    index = {f.stem: lemms, "path": str(f)}
     with open(filename, 'w') as json_file:
         json.dump(index, json_file)
 
@@ -95,6 +97,10 @@ def get_collocations(tokens: list[str]) -> list[str]:
     while i < len(tokens):
         word_has_colloc = False 
         word = tokens[i]
+        word = word.replace("'s", "s").replace("n't", "not").replace("'re", "are").replace("'ve", "have").replace("'ll", "will").replace("'d", "would").replace("'m", "am").replace("'em", "them").replace("'all", "all").replace("."," ").replace(","," ").replace("("," ").replace(")"," ").replace("["," ").replace("]"," ").replace("{"," ").replace("}"," ").replace(":"," ").replace(";"," ").replace("!"," ").replace("?"," ").replace("-"," ").replace("  "," ")
+        if word == " ":
+            i += 1
+            continue
         candidates = collocs.get_collocations(word)  
         if candidates:
             longest_colloc = max(candidates, key=len)
@@ -133,7 +139,7 @@ for f in files_paths:
         save_to_json(path, f, lemms , "lemmes")
 for f in files_paths:
     indexer = []
-    with open(path / f"{f.stem}_lemmes.json", "r") as file:
+    with open(path/"output" / f"{f.stem}_lemmes.json", "r") as file:
         tokens = json.load(file)[f.stem]
         token_counts = {}
         for token in tokens:
@@ -148,23 +154,25 @@ for f in files_paths:
 
 for f in files_paths:
     indexer = []
-    with open(path / f"{f.stem}_tf.json", "r") as file:
+    with open(path /"output" / f"{f.stem}_tf.json", "r") as file:
         tokens = json.load(file)[f.stem]
         for token in tokens:
             count = 0 
             for f2 in files_paths:
-                with open(path / f"{f2.stem}_tf.json", "r") as file2:
+                with open(path/"output" / f"{f2.stem}_tf.json", "r") as file2:
                     tokens2 = json.load(file2)[f2.stem]
                     if token[0] in [t[0] for t in tokens2]:
                         count += 1
             tok, c = token
             print(token, count)
             tf_idf_value = round(c * math.log10(len(files_paths) / count), 4)
+            # if tf_idf_value != 0:
+                # indexer.append((tok, tf_idf_value))
             indexer.append((tok, tf_idf_value))
         save_to_json(path, f, indexer, "tf_idf1")
 
 for f in files_paths:
-    with open(path / f"{f.stem}_tf_idf1.json", "r") as file:
+    with open(path / "output" / f"{f.stem}_tf_idf1.json", "r") as file:
         data = json.load(file)
         index = data[f.stem]
         keywords_and_weights = index  # List of keywords and weights
@@ -177,29 +185,3 @@ for f in files_paths:
 
             print(f"Keyword: {keyword}, Weight: {weight}")
                 
-
-
-# print(indexer)
-# with open("C:/Users/ahmed/Documents/Programming/Python/Fox/time_test/018.txt" , "r") as file:
-#     text = file.read()
-#     text = text.lower()
-#     print(text)
-#     tokens = word_tokenize(text)
-#     print(get_collocations(tokens))
-#     print(tokens)
-
-
-# def read_doc (doc):
-#     index = []
-#     with open (doc , "r") as file:
-#         for line in file:
-#             index.extend(line.split(sep = " "))
-#             return index
-
-
-# try:
-#     word_list = read_doc ("C:/Users/ahmed/Documents/Programming/Python/Collection_TIME/017.txt")
-#     print(word_list)
-
-# except FileNotFoundError:
-#     print("Error : File not found")
