@@ -1,0 +1,3 @@
+stoplist.txt
+collocations.txt
+collection_time folder which has all docs to index
