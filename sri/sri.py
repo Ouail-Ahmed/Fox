@@ -32,8 +32,8 @@ def main():
         # if the collections does exist ignore_indexing = True
         collections, ignore_indexing = indexed_documents_exists(db)
 
-        # if you want to force indexing again make it True
-        forced_indexing = True 
+        # if you want to force indexing againg make it True
+        forced_indexing = True
 
         if not ignore_indexing or forced_indexing:
             # Drop each collection individually
