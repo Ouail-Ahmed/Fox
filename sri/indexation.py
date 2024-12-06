@@ -58,6 +58,7 @@ def start(collocs, stoplist):
                 # Merge the dictionaries if the token exists
                 else:
                     tokens[token].update({doc_id: doc_tokens[token]})
+            #break
         else:
             print(f"missing .txt extention.\n{doc_name} is not considered as a text file")
 
@@ -197,7 +198,13 @@ def quotes_rec(doc_content):
         # restructure the document without the recognized quotes
         else:
             doc_content += divide[i]
-    
+
+    if len(quotes) == 1:
+        no_quotes = list(quotes.keys())[0]
+        # when there's no quotes it adds an empty string
+        if no_quotes == "" and quotes[no_quotes] == 1.0:
+            del quotes['']
+
     return doc_content, quotes
 
 # indexation conceputal
@@ -246,6 +253,10 @@ def indexation(collocs, doc_name, stoplist):
     # important variables
     colloc_length = 0
     have_pass = False
+
+    # to know the colloc that produces sub collocs
+    full_colloc = ""
+    full_colloc_length = 0
     
     for i in range(len(doc_content)):
         ith_collocs = {}
@@ -266,16 +277,14 @@ def indexation(collocs, doc_name, stoplist):
             # look_more = false means no potenial colloc
             look_more, add_token = colloc_rec(collocs, target)
             if (add_token):
-                # previous ith collocs are not the full collocation
-                for key in ith_collocs.keys():
-                    ith_collocs[key] = 1/5
-                # case of sub colloc when not skipping. ('rdms' -> 'dm', 'dms')
-                if (colloc_length > 0 and not have_pass):
-                    ith_collocs[target] = 1/5
+                # add to ith_collocs
+                ith_collocs[target] = 1.0
                 # add as potential full colloc
-                else:
-                    ith_collocs[target] = 1.0
+                if (colloc_length == 0 or have_pass):
+                    full_colloc = target
+                    full_colloc_length = len(target.split())
                     colloc_length = len(target.split())
+                    # to allow checking if there's not a longer colloc
                     have_pass = True
             
             # this tries to see if target is a colloc that ends with a punctutation
@@ -284,6 +293,7 @@ def indexation(collocs, doc_name, stoplist):
                 # if target is one word then no collocs expected
                 if (len(target.split()) == 1):
                     break
+
                 # handle case of target is a colloc that ends with punctuation
                 target = target.split(f" {doc_content[i+j]}")[0]
                 cleaned_string = CLEAN_RE.sub('', doc_content[i+j])
@@ -296,25 +306,23 @@ def indexation(collocs, doc_name, stoplist):
                     # no ith token will produce duplicate collocs in ith_collocs
                     # so its normal to have the frequence here as the const 1
                     if (add_token):
-                        for key in ith_collocs.keys():
-                            ith_collocs[key] = 1/5
-                        if (colloc_length > 0 and not have_pass):
-                            ith_collocs[target] = 1/5
-
-                        else:
-                            ith_collocs[target] = 1.0
+                        # colloc_length > 0 means this is a sub colloc have_pass means 
+                        # it can be a longer colloc, so we insert it when it's not.
+                        ith_collocs[target] = 1.0
+                        if (colloc_length == 0 or have_pass):
+                            full_colloc = target
+                            full_colloc_length = len(target.split())
                             colloc_length = len(target.split())
-                            have_pass = True
+                            # no longer colloc possible here, because of punctuation
                 break
-        # hundle score of sub collocs / skip sub collocs
-        if (colloc_length > 0):
-            colloc_length -= 1
-            # continue
-        else:
+        # skip sub collocs
+        if (colloc_length == 0):
             # if ith token is not a part of a colloc
             # if ith word is 2 words combind with apostrophe split them to 2 words
             target = doc_content[i]
 
+            # to add a token that is in the stop list before modifying it
+            # "can't" becaumes ca not with the transformation. "won't" too
             if target in stoplist:
                 ith_collocs[target] = 1.0
             
@@ -324,15 +332,19 @@ def indexation(collocs, doc_name, stoplist):
                         .replace("'ll", " will").replace("'d", " would").replace("'m", " am")
                             .replace("'em", " them").replace("'all", " all").replace("\"", "``"))
                 
-                # $800 -> $, 800, (time -> ( time
+                # $800 -> $, 800, (time) -> ( time)
                 result = re.match(split_on_punct_start, target)
                 if result:
                     punct, target = result.group(1), result.group(2)
+                    # this is how pos_tag recognize the quotes
                     if punct == "``":
                         ith_collocs[punct] = 1.0
+                    # pos_tag doesn't recognize multuple punctuations at once
+                    # so if the punctuation is !!? it's enough to take only the 1st one
                     else:
                         ith_collocs[punct[0]] = 1.0
 
+                # time) -> time )
                 end_punct = False
                 result = re.match(split_on_punct_end, target)
                 if result:
@@ -346,6 +358,7 @@ def indexation(collocs, doc_name, stoplist):
                     # seems duplicate but the second one is the more important one and without
                     # this one an error happens in the next split if target[i] is empty string
                     if target == '':
+                        print()
                         continue
                     
                     # if the '-' is note between two words then remove it as well
@@ -363,12 +376,28 @@ def indexation(collocs, doc_name, stoplist):
                         ith_collocs[punct] = 1.0
                     else:
                         ith_collocs[punct[0]] = 1.0
+        
+        # if the collocations in ith_colloc could be sub collocs
+        if full_colloc != "":
+            if (colloc_length == full_colloc_length and len(ith_collocs) > 1):
+                for colloc in ith_collocs:
+                    if colloc != full_colloc:
+                        ith_collocs[colloc] = 1/5
+
+            if (0 < colloc_length < full_colloc_length and len(ith_collocs) > 0):
+                for colloc in ith_collocs:
+                    ith_collocs[colloc] = 1/5
 
         # Merge ith_collocs into tokens
         merge_dicts(ith_collocs, doc_tokens)
 
         # sum of tokens of a document is the sum of recognised tokens
         sum_indexes += len(ith_collocs)
+
+        # when colloc_length > 0 then this token is inside a recognized collocation
+        # when it's back to 0 then we're out of it
+        if (colloc_length > 0):
+            colloc_length -= 1
 
     # in case we're indexing the query, reutrn freq and normalise tf by the sum
     if not doc_name.endswith('.txt'):
