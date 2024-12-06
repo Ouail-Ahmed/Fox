@@ -1,0 +1,7 @@
+# ignore pychach files
+__pycache__/
+
+/output/
+test.py
+/time_test/
+*.txt

@@ -1,6 +1,0 @@
-☐ extract collocations and simple words (wn to lemmatize) (start with longest collocations) @critical @high @today @urgent
-☐ use wn to extract domain/theme and preffered words 
-☐ calculate the weights of the words in the indexes (frequency then tf-idf) they should be in a list of tuples
-☐ insert into reverse index @low @when_possible
-☐ create a front-end to query and display documents
-☐ polish everything

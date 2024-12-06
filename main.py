@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 from nltk import word_tokenize 
 from nltk import pos_tag
 from nltk.stem import WordNetLemmatizer
@@ -8,24 +9,23 @@ import inverse_index_access
 import json
 import re
 import math
-folder = Path("C:/Users/ahmed/Documents/Programming/Python/Fox/time_test")
+folder = Path( os.path.join("time_test") )
 lemmatizer = WordNetLemmatizer()
 
 def custom_tokenizer(text):
-    quoted_phrases = re.findall(r'"([^"]+)"', text)
-    for i, phrase in enumerate(quoted_phrases):
-        placeholder = f"__QUOTE{i}__"
-        text = text.replace(f'"{phrase}"', placeholder)
-    # text = text.replace("'s", "s").replace("n't", "not").replace("'re", "are").replace("'ve", "have").replace("'ll", "will").replace("'d", "would").replace("'m", "am").replace("'em", "them").replace("'all", "all").replace("."," ").replace(","," ").replace("("," ").replace(")"," ").replace("["," ").replace("]"," ").replace("{"," ").replace("}"," ").replace(":"," ").replace(";"," ").replace("!"," ").replace("?"," ").replace("-"," ").replace("  "," ")
+    # quoted_phrases = re.findall(r'"([^"]+)"', text)
+    # for i, phrase in enumerate(quoted_phrases):
+    #     placeholder = f"__QUOTE{i}__"
+    #     text = text.replace(f'"{phrase}"', placeholder)
     tokens = word_tokenize(text)
     
-    for i, phrase in enumerate(quoted_phrases):
-        cleaned_phrase = phrase.replace('.', '').replace(',', '')  
-        if cleaned_phrase.startswith(" "):
-            cleaned_phrase = cleaned_phrase[1:]
-        if cleaned_phrase.endswith(" "):
-            cleaned_phrase = cleaned_phrase[:-1]
-        tokens = [f'{cleaned_phrase}' if token == f"__QUOTE{i}__" else token for token in tokens]
+    # for i, phrase in enumerate(quoted_phrases):
+        # cleaned_phrase = phrase.replace('.', '').replace(',', '')  
+        # if cleaned_phrase.startswith(" "):
+        #     cleaned_phrase = cleaned_phrase[1:]
+        # if cleaned_phrase.endswith(" "):
+        #     cleaned_phrase = cleaned_phrase[:-1]
+        # tokens = [f'{cleaned_phrase}' if token == f"__QUOTE{i}__" else token for token in tokens]
     
     return tokens
 
@@ -58,13 +58,9 @@ def save_to_json(path, f, lemms, file_name):
         json.dump(index, json_file)
 
 def remove_stop_words(lemms: list[str]) -> list[str]:
-   
     with open("StopList.txt", "r") as file:
         stop_words = [line.strip() for line in file if line.strip()]  
-
-
     filtered_lemms = []
-   
     for lem in lemms:
         for stop in stop_words:
             if "_" in stop:
@@ -99,7 +95,7 @@ def get_collocations(tokens: list[str]) -> list[str]:
     while i < len(tokens):
         word_has_colloc = False 
         word = tokens[i]
-        word = word.replace("'s", "s").replace("n't", "not").replace("'re", "are").replace("'ve", "have").replace("'ll", "will").replace("'d", "would").replace("'m", "am").replace("'em", "them").replace("'all", "all").replace("."," ").replace(","," ").replace("("," ").replace(")"," ").replace("["," ").replace("]"," ").replace("{"," ").replace("}"," ").replace(":"," ").replace(";"," ").replace("!"," ").replace("?"," ").replace("-"," ").replace("  "," ")
+        word = word.replace("'s", " s").replace("n't", " not").replace("'re", " are").replace("'ve", " have").replace("'ll", " will").replace("'d", " would").replace("'m", " am").replace("'em", " them").replace("'all", " all").replace("."," ").replace(","," ").replace("("," ").replace(")"," ").replace("["," ").replace("]"," ").replace("{"," ").replace("}"," ").replace(":"," ").replace(";"," ").replace("!"," ").replace("?"," ").replace("-"," ").replace("  "," ")
         if word == " ":
             i += 1
             continue
@@ -110,7 +106,6 @@ def get_collocations(tokens: list[str]) -> list[str]:
 
             for candidate in candidates:
                 if all_words_in_string (" ".join(tokens[i :i + length]) , candidate):
-                    print (candidate ," and " , tokens[i :i + length])
                     collocations.append( word+" "+candidate) 
                     i += 1  
                     word_has_colloc = True
@@ -121,69 +116,81 @@ def get_collocations(tokens: list[str]) -> list[str]:
 
     return collocations
 
+def count_tf (tokens: list[str]) -> list[tuple[str, int]]:
+    token_counts = {}
+    for token in tokens:
+        if token in token_counts:
+            token_counts[token] += 1
+        else:
+            token_counts[token] = 1
 
-# stpl = ["do" , "away" , "with","france","real madrid" ,"which"]
-# print(get_collocations(["nikita" ,"khrushchev" , "virgin" , "lands" , "with" , "for" ".", "for", "good", "measure", ","]))
 
 for f in files_paths:
     index = []
     with open( f, "r") as file:
         text = file.read()
         text = text.lower()
-        tokens = custom_tokenizer(text)
-        save_to_json(path , f  , tokens , "tokens")
+        tokens = word_tokenize(text)
         tokens = get_collocations(tokens)
-        save_to_json(path , f , tokens , "collocations")
         pos_tokens = pos_tag(tokens, tagset="universal")
-        save_to_json(path , f , pos_tokens , "pos_tags")
         lemms = get_lemmas(pos_tokens) 
         lemms = remove_stop_words(lemms)
-        save_to_json(path, f, lemms , "lemmes")
-for f in files_paths:
-    indexer = []
-    with open(path/"output" / f"{f.stem}_lemmes.json", "r") as file:
-        tokens = json.load(file)[f.stem]
+        indexer = []
         token_counts = {}
-        for token in tokens:
+        for token in lemms:
             if token in token_counts:
                 token_counts[token] += 1
             else:
                 token_counts[token] = 1
 
-        freq_max = max(token_counts.values())
-        indexer = [(token, round(count / freq_max, 4)) for token, count in token_counts.items()]
-        save_to_json(path, f , indexer, "tf")
-
-for f in files_paths:
-    indexer = []
-    with open(path /"output" / f"{f.stem}_tf.json", "r") as file:
-        tokens = json.load(file)[f.stem]
-        for token in tokens:
-            count = 0 
-            for f2 in files_paths:
-                with open(path/"output" / f"{f2.stem}_tf.json", "r") as file2:
-                    tokens2 = json.load(file2)[f2.stem]
-                    if token[0] in [t[0] for t in tokens2]:
-                        count += 1
-            tok, c = token
-            print(token, count)
-            tf_idf_value = round(c * math.log10(len(files_paths) / count), 4)
-            # if tf_idf_value != 0:
-                # indexer.append((tok, tf_idf_value))
-            indexer.append((tok, tf_idf_value))
-        save_to_json(path, f, indexer, "tf_idf1")
-
-for f in files_paths:
-    with open(path / "output" / f"{f.stem}_tf_idf1.json", "r") as file:
-        data = json.load(file)
-        index = data[f.stem]
-        keywords_and_weights = index  # List of keywords and weights
-        file_path = Path(data["path"])  # Path
-        print(f"Path: {int(file_path.stem)}")
-        for keyword, weight in keywords_and_weights:
-            p = Posting(file_path.stem , weight , str(file_path))
-            ind = Index( keyword,int(file_path.stem) , p)
+        indexer = [(token, float(count))  for token , count in token_counts.items()]
+        save_to_json(path, f, indexer, "tf")
+        for keyword, weight in indexer:
+            p = Posting(f.stem , weight , str(f))
+            ind = Index( keyword,int(f.stem) , p)
             inverse_index_access.insert_index(ind)
 
-            print(f"Keyword: {keyword}, Weight: {weight}")
+# for f in files_paths:
+#     indexer = []
+#     with open(path/"output" / f"{f.stem}_lemmes.json", "r") as file:
+#         tokens = json.load(file)[f.stem]
+#         token_counts = {}
+#         for token in tokens:
+#             if token in token_counts:
+#                 token_counts[token] += 1
+#             else:
+#                 token_counts[token] = 1
+
+#         freq_max = max(token_counts.values())
+#         indexer = [(token, round(count / freq_max, 4)) for token, count in token_counts.items()]
+
+# for f in files_paths:
+#     indexer = []
+#     with open(path /"output" / f"{f.stem}_tf.json", "r") as file:
+#         tokens = json.load(file)[f.stem]
+#         for token in tokens:
+#             count = 0 
+#             for f2 in files_paths:
+#                 with open(path/"output" / f"{f2.stem}_tf.json", "r") as file2:
+#                     tokens2 = json.load(file2)[f2.stem]
+#                     if token[0] in [t[0] for t in tokens2]:
+#                         count += 1
+#             tok, c = token
+#             tf_idf_value = round(c * math.log10(len(files_paths) / count), 4)
+#             # if tf_idf_value != 0:
+#                 # indexer.append((tok, tf_idf_value))
+#             indexer.append((tok, tf_idf_value))
+#         save_to_json(path, f, indexer, "tf_idf1")
+
+# for f in files_paths:
+#     with open(path / "output" / f"{f.stem}_tf_idf1.json", "r") as file:
+#         data = json.load(file)
+#         index = data[f.stem]
+#         keywords_and_weights = index  # List of keywords and weights
+#         file_path = Path(data["path"])  # Path
+#         for keyword, weight in keywords_and_weights:
+#             p = Posting(file_path.stem , weight , str(file_path))
+#             ind = Index( keyword,int(file_path.stem) , p)
+#             inverse_index_access.insert_index(ind)
+#can't cannot ca not
                 

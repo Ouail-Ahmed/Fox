@@ -324,7 +324,7 @@ def indexation(collocs, doc_name, stoplist):
                         .replace("'ll", " will").replace("'d", " would").replace("'m", " am")
                             .replace("'em", " them").replace("'all", " all").replace("\"", "``"))
                 
-                # $800 -> $, 800, (time -> ( time
+                # $800 -> $, 800, (time -> (, time
                 result = re.match(split_on_punct_start, target)
                 if result:
                     punct, target = result.group(1), result.group(2)
@@ -385,7 +385,7 @@ def indexation(collocs, doc_name, stoplist):
         query_tokens_sum = {}
 
         for token in doc_tokens:
-            query_tokens_sum[token] = round(doc_tokens[token] / sum_indexes,2)
+            query_tokens_sum[token] = doc_tokens[token] / sum_indexes
         return doc_tokens, query_tokens_sum
     
     return doc_tokens, sum_indexes
@@ -473,7 +473,7 @@ def get_idfs(tokens):
     global num_docs
     for token, posting in tokens.items():
         # log of (number of docs devided by number of docs the token appears in)
-        idfs[token] = round(math.log10(num_docs/len(posting)), 3)
+        idfs[token] = math.log10(num_docs/len(posting)) 
     
     return idfs
 
@@ -514,7 +514,7 @@ def fichier_inverse_sum(fi_freq):
 
         fi_sum[token] = {}
         for doc_id, freq in posting.items():
-            fi_sum[token][doc_id] = round(freq / float(sum_freq_docs[doc_id]), 3)
+            fi_sum[token][doc_id] = freq / float(sum_freq_docs[doc_id]) 
     
     return fi_sum
 
@@ -527,6 +527,6 @@ def fichier_inverse_max(fi_freq, max_freq_docs):
         
         fi_max[token] = {}
         for doc_id, freq in posting.items():
-            fi_max[token][doc_id] = round(freq / float(max_freq_docs[doc_id]), 3)
+            fi_max[token][doc_id] = freq / float(max_freq_docs[doc_id]) 
     
     return fi_max
