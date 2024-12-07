@@ -74,6 +74,8 @@ def start(collocs, stoplist):
 
     # Sort tokens alphabetically
     sorted_tokens = sorted(tokens.keys())
+    for token in sorted_tokens:
+        print(token)
 
     # fichier inverse (weight is tf*idf where tf = freq)
     fi_freq = fichier_inverse_freq(sorted_tokens, tokens)
@@ -83,43 +85,6 @@ def start(collocs, stoplist):
 
     # fichier inverse (weight is tf*idf where tf is normalised by the max)
     fi_max = fichier_inverse_max(fi_freq, max_freq_docs)
-
-    ##### prints ######
-    verbose = False
-    if verbose:
-        #print the max of frequencies of each doc
-        print(" docs max freq:")
-        for doc_id, freq in max_freq_docs.items():
-            print(f"{doc_id}.txt -> {freq}")
-
-        # print the sum of frequencies of each doc
-        print(" docs freq:")
-        for doc_id, freq in sum_freq_docs.items():
-            print(f"{doc_id} -> {freq}")
-
-        print("\n fi weight = freq")
-        print("\n\n")
-        for key in tokens.keys():
-            print(f"{key}:\t\t\t\t\t{tokens[key]}\n")
-
-        # print("\n idfs:")
-        # for token, idf in idfs.items():
-        #     print(f"{token} -> {idf}")
-
-        # print("\n fi weight = freq*idf")
-        # print("\n\n")
-        # for key in fi_freq.keys():
-        #     print(f"{key}:\t\t\t\t\t{fi_freq[key]}\n")
-
-        # print("\n fi weight = tf*idf where tf normalised by the sum")
-        # print("\n\n")
-        # for key in fi_sum.keys():
-        #     print(f"{key}:\t\t\t\t\t{fi_sum[key]}\n")
-
-        # print("\n fi weight = tf*idf where tf normalised by the max")
-        # print("\n\n")
-        # for key in fi_max.keys():
-        #     print(f"{key}:\t\t\t\t\t{fi_max[key]}\n")
 
     return fi_freq, fi_sum, fi_max
 
@@ -481,9 +446,6 @@ def merge_dicts(ith_collocs, doc_tokens):
     # this variable is used to confirm that the token appears for the 1st time for doc[
     # copy the collocs/subcollocs that we get from
     # tokens = [string, int, bool] / ith_collocs = [int, bool]
-    de = list(ith_collocs.keys())
-    if "de" in de:
-        print(de)
     for key, value in ith_collocs.items():
         # if the ith_colloc exists in tokens
         if key in doc_tokens:
@@ -542,6 +504,7 @@ def lemmatization(doc_tokens):
                 lemm = lemmatizer.lemmatize(word, pos="r")
             else:
                 continue
+            
             if lemm in lemms:
                 doc_tokens[lemm] += doc_tokens.pop(word)
             # replace that word with it's lemm
@@ -555,17 +518,6 @@ def lemmatization(doc_tokens):
                 doc_tokens[lemm] = doc_tokens.pop(word)
     
     return doc_tokens
-
-# calculate the idf of each token
-def get_idfs(tokens):
-    
-    idfs = {}
-    global num_docs
-    for token, posting in tokens.items():
-        # log of (number of docs devided by number of docs the token appears in)
-        idfs[token] = round(math.log10(num_docs/len(posting)), 3)
-    
-    return idfs
 
 # calculate max freq for each doc
 def get_docs_max_freq(tokens):
@@ -620,3 +572,14 @@ def fichier_inverse_max(fi_freq, max_freq_docs):
             fi_max[token][doc_id] = round(freq / float(max_freq_docs[doc_id]), 3)
     
     return fi_max
+
+# calculate the idf of each token / unused because it's better to store tf in FI
+def get_idfs(tokens):
+    
+    idfs = {}
+    global num_docs
+    for token, posting in tokens.items():
+        # log of (number of docs devided by number of docs the token appears in)
+        idfs[token] = round(math.log10(num_docs/len(posting)), 3)
+    
+    return idfs
