@@ -11,7 +11,7 @@ fi = {
 
 query_tokens = {}
 
-def main(fi_version, query):
+def main(fi_version, query, forced_indexing):
     MONGO_URI = 'mongodb://localhost:27017/'
     DATABASE_NAME = 'inverted_files'
 
@@ -34,8 +34,7 @@ def main(fi_version, query):
         # if the collections does exist ignore_indexing = True
         collections, ignore_indexing = indexed_document_exists(db, fi_version)
 
-        # if you want to force indexing againg make it True
-        forced_indexing = False
+        # if you want to force indexing again make it True
 
         if not ignore_indexing or forced_indexing:
             # Drop each collection individually

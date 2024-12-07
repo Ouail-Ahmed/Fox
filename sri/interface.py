@@ -1,5 +1,6 @@
 import tkinter as tk
 import os
+import time
 from tkinter import ttk
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -13,47 +14,8 @@ fi = {
     'm': 'fi_max'
 }
 
-# Example documents
-documents = [
-    "The cat sits on the mat.",
-    "The cat sits on the mat too.",
-    "Dogs are in the yard.",
-    "The bird is flying in the sky.",
-    "Fish swim in the sea."
-]
-
-# chat gpt generated indexation for tests 
 
 docs_path = os.path.join("assets", "collection_time")
-
-
-# def get_concepts(document):
-#     words = document.split()
-#     concepts = []
-#     for word in words:
-#         synsets = wn.synsets(word)
-#         if synsets:
-#             concept = synsets[0].lemmas()[0].name()
-#             concepts.append(concept)
-#     return ' '.join(concepts)
-
-# # Indexing documents
-# indexed_documents = [get_concepts(doc) for doc in documents]
-
-# # Creating the TF-IDF vector
-# vectorizer = TfidfVectorizer()
-# tfidf_matrix = vectorizer.fit_transform(indexed_documents)
-
-# Search function
-# def search(query):
-#     query_concepts = get_concepts(query)
-#     query_vector = vectorizer.transform([query_concepts])
-#     similarities = cosine_similarity(query_vector, tfidf_matrix).flatten()
-#     ranked_indices = similarities.argsort()[::-1]
-#     results = [(i, similarities[i]) for i in ranked_indices if similarities[i] > 0]
-#     return results
-
-#interface starts here
 
 # GUI class
 class SearchApp:
@@ -80,6 +42,19 @@ class SearchApp:
         self.search_button = ttk.Button(root, text="Rechercher", command=self.perform_search, style='Rounded.TButton')
         self.search_button.pack(pady=5)
 
+        self.patience_label = ttk.Label(root, text="", font=('Helvetica World', 12))
+        self.patience_label.pack(pady=5)
+
+        self.nb_docs_label = ttk.Label(root, text="", font=('Helvetica World', 12))
+        self.nb_docs_label.pack(pady=5)
+
+        self.reindex = ttk.Checkbutton(root, text="Réindexer", variable=tk.BooleanVar())
+        self.reindex.pack(pady=5)
+
+        self.tf_method = ttk.Combobox(root, values=['freq', 'Somme', 'Max'], state='readonly')
+        self.tf_method.current(0)
+        self.tf_method.pack(pady=5)
+
         self.results_text = tk.Text(root, width=80, height=20, font=('Helvetica World', 12))
         self.results_text.pack(pady=5)
 
@@ -96,13 +71,28 @@ class SearchApp:
                        foreground=[('active', '#11224e')])
 
     def perform_search(self):
+        i= 0
         query = self.query_entry.get()
-        results = work(fi['s'], query)
+        if self.reindex.instate(['selected']):
+            self.patience_label.config(text="Indexing...")
+            self.patience_label.update_idletasks()
+            i=1
+            self.reindex.state(['!selected'])
+        else:
+            i=0
+        if self.tf_method.get() == 'freq':
+            results = work(fi['f'], query, i)
+        elif self.tf_method.get() == 'Somme':
+            results = work(fi['s'], query, i)
+        elif self.tf_method.get() == 'Max':
+            results = work(fi['m'], query, i)
         #print(f"Results: {results}")
+        self.patience_label.config(text="")
         self.results_text.delete(1.0, tk.END)
         self.links.clear()
 
         if results:
+            self.nb_docs_label.config(text=f"Documents found: {len(results)}")
             for idx, doc_index in enumerate(results):
                 tag_name = f"link_{idx}"
                 #print (f"Document {doc_index } ")
@@ -112,6 +102,7 @@ class SearchApp:
                 self.links[tag_name] = os.path.join(docs_path, f"{doc_index}.txt")
                 #print(f"Linked {tag_name} to document {doc_index}")
         else:
+            self.nb_docs_label.config(text="No documents found.")
             self.results_text.insert(tk.END, "No results found.")
 
         #self.results_text.config(state=tk.DISABLED) 
