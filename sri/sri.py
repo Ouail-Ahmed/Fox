@@ -123,7 +123,7 @@ def search(db, collection_name, query):
                             tf_idf= tf*idf
 
                             #calcul de la pertinence de chaque doc
-                            vec= tf_idf * fi[key]
+                            vec= tf_idf * query[key]
                             # print(f"doc: {key3} tf-idf: {tf_idf} vector: {vec}")
                             if key3 not in list_docs:
                                 list_docs[key3]= vec
