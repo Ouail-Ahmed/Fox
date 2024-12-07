@@ -31,7 +31,7 @@ def main():
         collocs = sorted(read_doc(collocs_path).lower().split('\n'))
 
         #Query to search for, a changer dépendant de l'interface
-        query= '''hey 00 cape canaveral'''
+        query= '''hey 00 cape canaveral american'''
 
         query_tokens_freq, query_tokens_sum = index_query(collocs, query, stoplist)
 
