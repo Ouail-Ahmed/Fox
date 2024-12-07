@@ -1,10 +1,6 @@
 import re, math, os
 from nltk import pos_tag
 from nltk.stem import WordNetLemmatizer
-from sentence_transformers import SentenceTransformer, util
-
-# Load the language model
-model = SentenceTransformer('all-MiniLM-L6-v2')
 
 # docs path
 docs_path = os.path.join("assets", "collection_time")
@@ -181,7 +177,6 @@ def construct_collocations(colloc_length, i, target, doc_content, collocs):
 
         full_colloc = ""
         full_colloc_length = 0
-        full_colloc_embedding = None
 
         for j in range(longest_colloc_length):
             # constructing potenial collocation
@@ -204,7 +199,6 @@ def construct_collocations(colloc_length, i, target, doc_content, collocs):
                 if (colloc_length == 0 or have_pass):
                     full_colloc = target
                     full_colloc_length = len(target.split())
-                    full_colloc_embedding = model.encode(target, convert_to_tensor=True)
                     colloc_length = len(target.split())
                     # to allow checking if there's not a longer colloc
                     have_pass = True
@@ -237,7 +231,6 @@ def construct_collocations(colloc_length, i, target, doc_content, collocs):
                     if (colloc_length == 0 or have_pass):
                         full_colloc = target
                         full_colloc_length = len(target.split())
-                        full_colloc_embedding = model.encode(target, convert_to_tensor=True)
                         colloc_length = len(target.split())
                 
                 elif(not look_more):
@@ -266,12 +259,11 @@ def construct_collocations(colloc_length, i, target, doc_content, collocs):
                             if (colloc_length == 0 or have_pass):
                                 full_colloc = target
                                 full_colloc_length = len(target.split())
-                                full_colloc_embedding = model.encode(target, convert_to_tensor=True)
                                 colloc_length = len(target.split())
                 # no longer colloc possible here, because of punctuation or apostrophe
                 break
 
-        return full_colloc, full_colloc_length, full_colloc_embedding, ith_collocs
+        return full_colloc, full_colloc_length, ith_collocs
 
 # indexation conceputal
 def indexation(collocs, doc_name, stoplist):
@@ -325,7 +317,7 @@ def indexation(collocs, doc_name, stoplist):
     
     for i in range(len(doc_content)):
         # construct potential collocations
-        fc_tmp, fcl_tmp, fce_tmp, ith_collocs = \
+        fc_tmp, fcl_tmp, ith_collocs = \
                 construct_collocations(colloc_length, i, doc_content[i], doc_content, collocs)
         
         # if a colloc is recognized and it's not a sub colloc
@@ -333,7 +325,6 @@ def indexation(collocs, doc_name, stoplist):
             full_colloc = fc_tmp
             full_colloc_length = fcl_tmp
             colloc_length = fcl_tmp
-            full_colloc_embedding = fce_tmp
             
         # skip sub collocs
         if (colloc_length == 0):
@@ -399,15 +390,11 @@ def indexation(collocs, doc_name, stoplist):
             if (colloc_length == full_colloc_length and len(ith_collocs) > 1):
                 for colloc in ith_collocs:
                     if colloc != full_colloc:
-                        sub_colloc_embedding = model.encode(colloc, convert_to_tensor=True)
-                        similarity = util.pytorch_cos_sim(full_colloc_embedding, sub_colloc_embedding).item()
-                        ith_collocs[colloc] = similarity
+                        ith_collocs[colloc] = 1/5
 
             if (0 < colloc_length < full_colloc_length and len(ith_collocs) > 0):
                 for colloc in ith_collocs:
-                    sub_colloc_embedding = model.encode(colloc, convert_to_tensor=True)
-                    similarity = util.pytorch_cos_sim(full_colloc_embedding, sub_colloc_embedding).item()
-                    ith_collocs[colloc] = similarity
+                    ith_collocs[colloc] = 1/5
 
         # Merge ith_collocs into tokens
         merge_dicts(ith_collocs, doc_tokens)
@@ -554,7 +541,7 @@ def fichier_inverse_sum(fi_freq):
 
         fi_sum[token] = {}
         for doc_id, freq in posting.items():
-            fi_sum[token][doc_id] = freq / float(sum_freq_docs[doc_id])
+            fi_sum[token][doc_id] = round(freq / float(sum_freq_docs[doc_id]), 3)
     
     return fi_sum
 
@@ -567,7 +554,7 @@ def fichier_inverse_max(fi_freq, max_freq_docs):
         
         fi_max[token] = {}
         for doc_id, freq in posting.items():
-            fi_max[token][doc_id] = freq / float(max_freq_docs[doc_id])
+            fi_max[token][doc_id] = round(freq / float(max_freq_docs[doc_id]), 3)
     
     return fi_max
 

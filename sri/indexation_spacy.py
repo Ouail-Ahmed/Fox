@@ -1,10 +1,10 @@
 import re, math, os
 from nltk import pos_tag
 from nltk.stem import WordNetLemmatizer
-from sentence_transformers import SentenceTransformer, util
+import spacy
 
 # Load the language model
-model = SentenceTransformer('all-MiniLM-L6-v2')
+nlp = spacy.load("en_core_web_md")
 
 # docs path
 docs_path = os.path.join("assets", "collection_time")
@@ -181,7 +181,7 @@ def construct_collocations(colloc_length, i, target, doc_content, collocs):
 
         full_colloc = ""
         full_colloc_length = 0
-        full_colloc_embedding = None
+        full_colloc_vector = None
 
         for j in range(longest_colloc_length):
             # constructing potenial collocation
@@ -204,7 +204,7 @@ def construct_collocations(colloc_length, i, target, doc_content, collocs):
                 if (colloc_length == 0 or have_pass):
                     full_colloc = target
                     full_colloc_length = len(target.split())
-                    full_colloc_embedding = model.encode(target, convert_to_tensor=True)
+                    full_colloc_vector = nlp(target)
                     colloc_length = len(target.split())
                     # to allow checking if there's not a longer colloc
                     have_pass = True
@@ -237,7 +237,7 @@ def construct_collocations(colloc_length, i, target, doc_content, collocs):
                     if (colloc_length == 0 or have_pass):
                         full_colloc = target
                         full_colloc_length = len(target.split())
-                        full_colloc_embedding = model.encode(target, convert_to_tensor=True)
+                        full_colloc_vector = nlp(target)
                         colloc_length = len(target.split())
                 
                 elif(not look_more):
@@ -266,12 +266,12 @@ def construct_collocations(colloc_length, i, target, doc_content, collocs):
                             if (colloc_length == 0 or have_pass):
                                 full_colloc = target
                                 full_colloc_length = len(target.split())
-                                full_colloc_embedding = model.encode(target, convert_to_tensor=True)
+                                full_colloc_vector = nlp(target)
                                 colloc_length = len(target.split())
                 # no longer colloc possible here, because of punctuation or apostrophe
                 break
 
-        return full_colloc, full_colloc_length, full_colloc_embedding, ith_collocs
+        return full_colloc, full_colloc_length, full_colloc_vector, ith_collocs
 
 # indexation conceputal
 def indexation(collocs, doc_name, stoplist):
@@ -325,7 +325,7 @@ def indexation(collocs, doc_name, stoplist):
     
     for i in range(len(doc_content)):
         # construct potential collocations
-        fc_tmp, fcl_tmp, fce_tmp, ith_collocs = \
+        fc_tmp, fcl_tmp, fcv_tmp, ith_collocs = \
                 construct_collocations(colloc_length, i, doc_content[i], doc_content, collocs)
         
         # if a colloc is recognized and it's not a sub colloc
@@ -333,7 +333,7 @@ def indexation(collocs, doc_name, stoplist):
             full_colloc = fc_tmp
             full_colloc_length = fcl_tmp
             colloc_length = fcl_tmp
-            full_colloc_embedding = fce_tmp
+            full_colloc_vector = fcv_tmp
             
         # skip sub collocs
         if (colloc_length == 0):
@@ -399,15 +399,13 @@ def indexation(collocs, doc_name, stoplist):
             if (colloc_length == full_colloc_length and len(ith_collocs) > 1):
                 for colloc in ith_collocs:
                     if colloc != full_colloc:
-                        sub_colloc_embedding = model.encode(colloc, convert_to_tensor=True)
-                        similarity = util.pytorch_cos_sim(full_colloc_embedding, sub_colloc_embedding).item()
-                        ith_collocs[colloc] = similarity
+                        sub_colloc_vector = nlp(colloc)
+                        ith_collocs[colloc] = full_colloc_vector.similarity(sub_colloc_vector)
 
             if (0 < colloc_length < full_colloc_length and len(ith_collocs) > 0):
                 for colloc in ith_collocs:
-                    sub_colloc_embedding = model.encode(colloc, convert_to_tensor=True)
-                    similarity = util.pytorch_cos_sim(full_colloc_embedding, sub_colloc_embedding).item()
-                    ith_collocs[colloc] = similarity
+                    sub_colloc_vector = nlp(colloc)
+                    ith_collocs[colloc] = full_colloc_vector.similarity(sub_colloc_vector)
 
         # Merge ith_collocs into tokens
         merge_dicts(ith_collocs, doc_tokens)
