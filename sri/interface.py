@@ -1,11 +1,11 @@
 import tkinter as tk
+import os
 from tkinter import ttk
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from nltk.corpus import wordnet as wn
-import nltk
+from query import search
 
-nltk.download('wordnet')
 
 # Example documents
 documents = [
@@ -17,6 +17,8 @@ documents = [
 ]
 
 # chat gpt generated indexation for tests 
+
+docs_path = os.path.join("assets", "collection_time")
 
 
 def get_concepts(document):
@@ -37,13 +39,13 @@ vectorizer = TfidfVectorizer()
 tfidf_matrix = vectorizer.fit_transform(indexed_documents)
 
 # Search function
-def search(query):
-    query_concepts = get_concepts(query)
-    query_vector = vectorizer.transform([query_concepts])
-    similarities = cosine_similarity(query_vector, tfidf_matrix).flatten()
-    ranked_indices = similarities.argsort()[::-1]
-    results = [(i, similarities[i]) for i in ranked_indices if similarities[i] > 0]
-    return results
+# def search(query):
+#     query_concepts = get_concepts(query)
+#     query_vector = vectorizer.transform([query_concepts])
+#     similarities = cosine_similarity(query_vector, tfidf_matrix).flatten()
+#     ranked_indices = similarities.argsort()[::-1]
+#     results = [(i, similarities[i]) for i in ranked_indices if similarities[i] > 0]
+#     return results
 
 
 
@@ -94,20 +96,22 @@ class SearchApp:
     def perform_search(self):
         query = self.query_entry.get()
         results = search(query)
+        print(f"Results: {results}")
         self.results_text.delete(1.0, tk.END)
         self.links.clear()
 
         if results:
-            for idx, (doc_index, score) in enumerate(results):
+            for idx, doc_index in enumerate(results):
                 tag_name = f"link_{idx}"
-                self.results_text.insert(tk.END, f"Document {doc_index + 1}\n", tag_name)
-                self.results_text.tag_add(tag_name, f"{idx+1}.0", f"{idx+1}.end")
+                print (f"Document {doc_index } ")
+                self.results_text.insert(tk.END, f"Document {doc_index }\n", tag_name)
+                # self.results_text.tag_add(tag_name, f"{idx+1}.0", f"{idx+1}.end")
                 self.results_text.tag_bind(tag_name, "<Button-1>", self._click)
-                self.links[tag_name] = doc_index
+                self.links[tag_name] = f"{docs_path}\\{doc_index}.txt"
                 print(f"Linked {tag_name} to document {doc_index}")
         else:
             self.results_text.insert(tk.END, "No results found.")
-
+        self.results_text.config(state=tk.DISABLED) 
 
 
     def _click(self, event):
@@ -122,13 +126,23 @@ class SearchApp:
                     print(f"No document found for clicked index: {clicked_index}")
                 break
 
-    def show_document_content(self, doc_index):
-        doc_window = tk.Toplevel(self.root)
-        doc_window.title(f"Document {doc_index + 1} Content")
+    def show_document_content(self, file_path):
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                content = file.read()
 
-        text_widget = tk.Text(doc_window, wrap='word')
-        text_widget.pack(expand=1, fill='both')
-        text_widget.insert(tk.END, documents[doc_index])
+            doc_window = tk.Toplevel(self.root)
+            doc_window.title(f"Document: {file_path}")
+
+            text_widget = tk.Text(doc_window, wrap='word', font=('Helvetica World', 12))
+            text_widget.pack(expand=1, fill='both', padx=10, pady=10)
+            text_widget.insert(tk.END, content)
+            text_widget.config(state=tk.DISABLED)
+        except FileNotFoundError:
+            print(f"Error: File {file_path} not found.")
+        except Exception as e:
+            print(f"An error occurred while opening the file: {e}")
+
 
 if __name__ == "__main__":
     root = tk.Tk()

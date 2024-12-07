@@ -1,6 +1,6 @@
 # ignore pychach files
 __pycache__/
-
+sklearn-env/
 /output/
 test.py
 /time_test/

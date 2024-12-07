@@ -2,11 +2,11 @@ import os
 import fnmatch
 import math
 from pymongo import MongoClient, errors
-from indexation import start as index_docs, read_doc, indexation as index_query
+from indexation_1_5 import start as index_docs, read_doc, indexation as index_query
 
 
 
-def main():
+def search(query ):
     MONGO_URI = 'mongodb://localhost:27017/'
     DATABASE_NAME = 'inverted_files'
 
@@ -31,7 +31,7 @@ def main():
         collocs = sorted(read_doc(collocs_path).lower().split('\n'))
 
         #Query to search for, a changer dépendant de l'interface
-        query= '''hey 00 cape canaveral american'''
+        # query= '''hey 00 cape canaveral american'''
 
         query_tokens_freq, query_tokens_sum = index_query(collocs, query, stoplist)
 
@@ -51,12 +51,12 @@ def main():
                     for field in doc:
                         #calcul de l'idf en se basant sur le nbr docs ou il apparait
                         if field == "dt":
-                            print(f"key: {key} nbdocs: {doc[field]}")
+                            # print(f"key: {key} nbdocs: {doc[field]}")
                             idf= math.log10(num_docs/doc[field])
-                            print(f"idf: {idf}")
+                            # print(f"idf: {idf}")
                             
                         if field== "post":
-                            print(f"token: {key}")
+                            # print(f"token: {key}")
                             for key3 in doc[field]:
                                 #calcul du tf-idf
                                 tf= doc[field][key3]
@@ -64,7 +64,7 @@ def main():
 
                                 #calcul de la pertinence de chaque doc
                                 vec= tf_idf*query_tokens_sum[key]
-                                print(f"doc: {key3} tf-idf: {tf_idf} vector: {vec}")
+                                # print(f"doc: {key3} tf-idf: {tf_idf} vector: {vec}")
                                 if key3 not in list_docs:
                                     list_docs[key3]= vec
                                 else:
@@ -75,7 +75,8 @@ def main():
 
         #tri des docs par pertinence
         list_docs= sorted(list_docs, key=list_docs.get, reverse=True)
-        print(list_docs)
+        # print(list_docs)
+        return list_docs
 
     except errors.ConnectionFailure as e:
         print(f"Error: {e}")
@@ -85,6 +86,6 @@ def main():
         print(f"Error: {e}")
         print("Connection to database failed")
         return
-    
-if __name__ == "__main__":
-    main()
+
+
+# search("hey 00 cape canaveral american")
