@@ -6,6 +6,12 @@ from sklearn.metrics.pairwise import cosine_similarity
 from nltk.corpus import wordnet as wn
 from sri import main as work
 
+# expected names of collections
+fi = {
+    'f': 'fi_freq',
+    's': 'fi_sum',
+    'm': 'fi_max'
+}
 
 # Example documents
 documents = [
@@ -91,23 +97,24 @@ class SearchApp:
 
     def perform_search(self):
         query = self.query_entry.get()
-        results = work('s', query)
-        print(f"Results: {results}")
+        results = work(fi['s'], query)
+        #print(f"Results: {results}")
         self.results_text.delete(1.0, tk.END)
         self.links.clear()
 
         if results:
             for idx, doc_index in enumerate(results):
                 tag_name = f"link_{idx}"
-                print (f"Document {doc_index } ")
+                #print (f"Document {doc_index } ")
                 self.results_text.insert(tk.END, f"Document {doc_index }\n", tag_name)
                 # self.results_text.tag_add(tag_name, f"{idx+1}.0", f"{idx+1}.end")
                 self.results_text.tag_bind(tag_name, "<Button-1>", self._click)
                 self.links[tag_name] = os.path.join(docs_path, f"{doc_index}.txt")
-                print(f"Linked {tag_name} to document {doc_index}")
+                #print(f"Linked {tag_name} to document {doc_index}")
         else:
             self.results_text.insert(tk.END, "No results found.")
-        self.results_text.config(state=tk.DISABLED) 
+
+        #self.results_text.config(state=tk.DISABLED) 
 
 
     def _click(self, event):
