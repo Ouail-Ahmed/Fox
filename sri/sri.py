@@ -89,13 +89,13 @@ def add_fi_to_database(db, collection_name, fi):
 
     print(f"Data inserted into database under '{collection_name}' collection.")
 
-def search(db, collection_name, fi):
+def search(db, collection_name, query):
     list_docs = {}
     
     collection = db[collection_name]
 
     #Parcours de chaque token de la requête
-    for key in fi:
+    for key in query:
         # get the number of docs in the collection
         docs_path = os.path.join("assets", "collection_time")
         num_docs = len(fnmatch.filter(os.listdir(docs_path), '*.txt'))
