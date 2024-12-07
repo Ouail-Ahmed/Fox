@@ -74,8 +74,6 @@ def start(collocs, stoplist):
 
     # Sort tokens alphabetically
     sorted_tokens = sorted(tokens.keys())
-    for token in sorted_tokens:
-        print(token)
 
     # fichier inverse (weight is tf*idf where tf = freq)
     fi_freq = fichier_inverse_freq(sorted_tokens, tokens)
