@@ -4,8 +4,14 @@ from tkinter import ttk
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from nltk.corpus import wordnet as wn
-from query import search
+from sri import main as work
 
+# expected names of collections
+fi = {
+    'f': 'fi_freq',
+    's': 'fi_sum',
+    'm': 'fi_max'
+}
 
 # Example documents
 documents = [
@@ -21,22 +27,22 @@ documents = [
 docs_path = os.path.join("assets", "collection_time")
 
 
-def get_concepts(document):
-    words = document.split()
-    concepts = []
-    for word in words:
-        synsets = wn.synsets(word)
-        if synsets:
-            concept = synsets[0].lemmas()[0].name()
-            concepts.append(concept)
-    return ' '.join(concepts)
+# def get_concepts(document):
+#     words = document.split()
+#     concepts = []
+#     for word in words:
+#         synsets = wn.synsets(word)
+#         if synsets:
+#             concept = synsets[0].lemmas()[0].name()
+#             concepts.append(concept)
+#     return ' '.join(concepts)
 
-# Indexing documents
-indexed_documents = [get_concepts(doc) for doc in documents]
+# # Indexing documents
+# indexed_documents = [get_concepts(doc) for doc in documents]
 
-# Creating the TF-IDF vector
-vectorizer = TfidfVectorizer()
-tfidf_matrix = vectorizer.fit_transform(indexed_documents)
+# # Creating the TF-IDF vector
+# vectorizer = TfidfVectorizer()
+# tfidf_matrix = vectorizer.fit_transform(indexed_documents)
 
 # Search function
 # def search(query):
@@ -47,11 +53,7 @@ tfidf_matrix = vectorizer.fit_transform(indexed_documents)
 #     results = [(i, similarities[i]) for i in ranked_indices if similarities[i] > 0]
 #     return results
 
-
-
 #interface starts here
-
-
 
 # GUI class
 class SearchApp:
@@ -95,23 +97,24 @@ class SearchApp:
 
     def perform_search(self):
         query = self.query_entry.get()
-        results = search(query)
-        print(f"Results: {results}")
+        results = work(fi['s'], query)
+        #print(f"Results: {results}")
         self.results_text.delete(1.0, tk.END)
         self.links.clear()
 
         if results:
             for idx, doc_index in enumerate(results):
                 tag_name = f"link_{idx}"
-                print (f"Document {doc_index } ")
+                #print (f"Document {doc_index } ")
                 self.results_text.insert(tk.END, f"Document {doc_index }\n", tag_name)
                 # self.results_text.tag_add(tag_name, f"{idx+1}.0", f"{idx+1}.end")
                 self.results_text.tag_bind(tag_name, "<Button-1>", self._click)
-                self.links[tag_name] = f"{docs_path}\\{doc_index}.txt"
-                print(f"Linked {tag_name} to document {doc_index}")
+                self.links[tag_name] = os.path.join(docs_path, f"{doc_index}.txt")
+                #print(f"Linked {tag_name} to document {doc_index}")
         else:
             self.results_text.insert(tk.END, "No results found.")
-        self.results_text.config(state=tk.DISABLED) 
+
+        #self.results_text.config(state=tk.DISABLED) 
 
 
     def _click(self, event):

@@ -431,12 +431,27 @@ def indexation(collocs, doc_name, stoplist):
         # remove the number of stop words from the sum words of the query
         sum_indexes -= deleted_indexes
 
+        #query tf sum
         # dict of query tokens with the weight being tf normalised to the sum
         query_tokens_sum = {}
 
+        # construct query tf sum
         for token in doc_tokens:
-            query_tokens_sum[token] = round(doc_tokens[token] / sum_indexes,2)
-        return doc_tokens, query_tokens_sum
+            query_tokens_sum[token] = doc_tokens[token] / sum_indexes
+        
+        # query tf max
+        query_tokens_max = {}
+        # find the max freq in query
+        max_freq_query = 0
+        for token in doc_tokens:
+            if doc_tokens[token] > max_freq_query:
+                max_freq_query = doc_tokens[token]
+
+        # construct query tf max
+        for token in doc_tokens:
+            query_tokens_max[token] = doc_tokens[token] / max_freq_query
+
+        return doc_tokens, query_tokens_sum, query_tokens_max
     
     return doc_tokens, sum_indexes
     
