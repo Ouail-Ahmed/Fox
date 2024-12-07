@@ -3,6 +3,7 @@ import fnmatch
 import math
 from pymongo import MongoClient, errors
 from indexation_1_5 import start as index_docs, read_doc, indexation as index_query
+from sri import main 
 
 
 
@@ -11,12 +12,16 @@ def search(query ):
     DATABASE_NAME = 'inverted_files'
 
     try:
+        
         client= MongoClient(MONGO_URI)
         db= client[DATABASE_NAME]
+        print(db.list_collection_names())
+        
 
-        #Collection a utiliser, a changer dépendant de l'interface (somme,max ou freq)
-        collection=db['fi_sum']
+        if "fi_sum" not in db.list_collection_names():
+            main()
 
+        collection= db["fi_sum"]
         # get the number of docs in the collection
         docs_path = os.path.join("assets", "collection_time")
         num_docs = len(fnmatch.filter(os.listdir(docs_path), '*.txt'))
@@ -75,7 +80,7 @@ def search(query ):
 
         #tri des docs par pertinence
         list_docs= sorted(list_docs, key=list_docs.get, reverse=True)
-        # print(list_docs)
+        print(list_docs)
         return list_docs
 
     except errors.ConnectionFailure as e:
@@ -88,4 +93,4 @@ def search(query ):
         return
 
 
-# search("hey 00 cape canaveral american")
+search("hey 00 cape canaveral american")

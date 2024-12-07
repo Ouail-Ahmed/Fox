@@ -1,6 +1,6 @@
 import os
 from pymongo import MongoClient, errors
-from indexation import start as index_docs, read_doc, indexation as index_query
+from indexation_1_5 import start as index_docs, read_doc, indexation as index_query
 
 # names of expected_collections
 fi = {
